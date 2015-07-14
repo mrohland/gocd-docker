@@ -1,0 +1,27 @@
+FROM gocd/gocd-agent:15.1.0
+
+# Added docker to gocd-agent image as combination of current docker install docs + https://github.com/jpetazzo/dind/blob/master/Dockerfile
+
+# install wget
+RUN apt-get update &&\
+    apt-get install wget
+
+#install docker
+RUN wget -qO- https://get.docker.com/ | sh
+
+# Define additional metadata
+VOLUME /var/lib/docker
+
+# preparing image for docker service
+RUN mkdir -p /etc/my_init.d
+ADD gocd-agent/init-docker.sh /etc/my_init.d/init-docker.sh
+
+# start docker service
+RUN mkdir /etc/service/docker
+ADD gocd-agent/docker.sh /etc/service/docker/run
+
+# allow go user to use docker
+RUN usermod -aG docker go
+
+# add self signed cert for private registry usage
+ADD gocd-agent/registry.crt /etc/docker/certs.d/192.168.59.103:5000/ca.crt
